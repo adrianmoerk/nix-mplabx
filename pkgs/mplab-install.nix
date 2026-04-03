@@ -60,19 +60,19 @@ pkgs.writeShellScriptBin "mplab-install" ''
     shift
     local versions=("$@")
 
-    echo ""
-    echo "$prompt"
-    echo ""
+    echo "" >&2
+    echo "$prompt" >&2
+    echo "" >&2
     local i=1
     for v in "''${versions[@]}"; do
       if [ $i -eq 1 ]; then
-        echo "  $i) v$v (latest)"
+        echo "  $i) v$v (latest)" >&2
       else
-        echo "  $i) v$v"
+        echo "  $i) v$v" >&2
       fi
       ((i++))
     done
-    echo ""
+    echo "" >&2
 
     while true; do
       read -p "Select version [1-''${#versions[@]}]: " choice
@@ -80,7 +80,7 @@ pkgs.writeShellScriptBin "mplab-install" ''
         echo "''${versions[$((choice-1))]}"
         return
       fi
-      echo "Invalid selection, please try again."
+      echo "Invalid selection, please try again." >&2
     done
   }
 
