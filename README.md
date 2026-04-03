@@ -94,17 +94,34 @@ mplab-versions
 
 ## Version Management
 
-### Installing Specific Versions
+### Installing Versions
+
+The installer provides an interactive menu to select versions:
 
 ```bash
-# Show known working versions
-mplab-install --list-versions
-
-# Install specific versions
-mplab-install --mplabx-version 6.25 --xc32-version 4.35
-
-# Install default versions
 mplab-install
+```
+
+```
+=== MPLAB X / XC32 Installation Helper ===
+
+What would you like to install?
+
+  1) XC32 Compiler only
+  2) MPLAB X IDE/IPE only
+  3) Both XC32 and MPLAB X
+  4) Exit
+
+Enter choice [1-4]: 3
+
+Select XC32 version to install:
+
+  1) v5.10 (latest)
+  2) v4.45
+  3) v4.40
+  ...
+
+Select version [1-7]: 1
 ```
 
 ### Using Specific Versions
