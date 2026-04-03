@@ -7,8 +7,8 @@
   mplabxFhs,
 }: let
   # Extract version numbers without 'v' prefix for URLs
-  mplabxVer = builtins.replaceStrings ["v"] [""] mplabxVersion;
-  xc32Ver = builtins.replaceStrings ["v"] [""] xc32Version;
+  defaultMplabxVer = builtins.replaceStrings ["v"] [""] mplabxVersion;
+  defaultXc32Ver = builtins.replaceStrings ["v"] [""] xc32Version;
 in
   pkgs.writeShellScriptBin "mplab-install" ''
     set -e
@@ -16,9 +16,81 @@ in
     DOWNLOAD_DIR="$HOME/Downloads/microchip"
     INSTALL_DIR="/opt/microchip"
 
-    # Version info
-    XC32_VERSION="${xc32Ver}"
-    MPLABX_VERSION="${mplabxVer}"
+    # Default versions (can be overridden via arguments)
+    XC32_VERSION="''${XC32_VERSION:-${defaultXc32Ver}}"
+    MPLABX_VERSION="''${MPLABX_VERSION:-${defaultMplabxVer}}"
+
+    # Parse command line arguments
+    show_help() {
+      echo "Usage: mplab-install [OPTIONS]"
+      echo ""
+      echo "Install Microchip MPLAB X IDE and XC32 compiler on NixOS."
+      echo ""
+      echo "Options:"
+      echo "  --mplabx-version VERSION   MPLAB X version to install (default: $MPLABX_VERSION)"
+      echo "  --xc32-version VERSION     XC32 version to install (default: $XC32_VERSION)"
+      echo "  --list-versions            Show known working versions"
+      echo "  --help                     Show this help message"
+      echo ""
+      echo "Examples:"
+      echo "  mplab-install                              # Install default versions"
+      echo "  mplab-install --mplabx-version 6.25        # Install MPLAB X v6.25"
+      echo "  mplab-install --xc32-version 4.35          # Install XC32 v4.35"
+      echo ""
+      echo "Environment variables:"
+      echo "  MPLABX_VERSION    Override MPLAB X version"
+      echo "  XC32_VERSION      Override XC32 version"
+    }
+
+    list_versions() {
+      echo "Known working versions:"
+      echo ""
+      echo "MPLAB X IDE:"
+      echo "  6.30 (default, latest)"
+      echo "  6.25"
+      echo "  6.20"
+      echo "  6.15"
+      echo "  6.10"
+      echo "  6.05"
+      echo "  6.00"
+      echo ""
+      echo "XC32 Compiler:"
+      echo "  5.10 (default, latest)"
+      echo "  4.45"
+      echo "  4.40"
+      echo "  4.35"
+      echo "  4.30"
+      echo "  4.21"
+      echo ""
+      echo "Note: Other versions may work. Check Microchip's archive:"
+      echo "  https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem"
+    }
+
+    while [[ $# -gt 0 ]]; do
+      case $1 in
+        --mplabx-version)
+          MPLABX_VERSION="$2"
+          shift 2
+          ;;
+        --xc32-version)
+          XC32_VERSION="$2"
+          shift 2
+          ;;
+        --list-versions)
+          list_versions
+          exit 0
+          ;;
+        --help|-h)
+          show_help
+          exit 0
+          ;;
+        *)
+          echo "Unknown option: $1"
+          show_help
+          exit 1
+          ;;
+      esac
+    done
 
     # URLs for installers
     XC32_URL="https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/xc32-v''${XC32_VERSION}-full-install-linux-x64-installer.run"
@@ -29,11 +101,20 @@ in
 
     echo "=== MPLAB X / XC32 Installation Helper ==="
     echo ""
-    echo "Versions:"
+    echo "Versions to install:"
     echo "  MPLAB X IDE: v$MPLABX_VERSION"
     echo "  XC32 Compiler: v$XC32_VERSION"
     echo ""
     echo "Installation directory: $INSTALL_DIR"
+    echo ""
+
+    # Show currently installed versions
+    if [ -d "$INSTALL_DIR/mplabx" ]; then
+      echo "Currently installed MPLAB X versions: $(ls $INSTALL_DIR/mplabx/ 2>/dev/null | tr '\n' ' ')"
+    fi
+    if [ -d "$INSTALL_DIR/xc32" ]; then
+      echo "Currently installed XC32 versions: $(ls $INSTALL_DIR/xc32/ 2>/dev/null | tr '\n' ' ')"
+    fi
     echo ""
 
     # Create directories
@@ -64,9 +145,9 @@ in
 
     # Menu
     echo "What would you like to install?"
-    echo "1) XC32 Compiler only"
-    echo "2) MPLAB X IDE/IPE only"
-    echo "3) Both XC32 and MPLAB X"
+    echo "1) XC32 Compiler v$XC32_VERSION only"
+    echo "2) MPLAB X IDE/IPE v$MPLABX_VERSION only"
+    echo "3) Both XC32 v$XC32_VERSION and MPLAB X v$MPLABX_VERSION"
     echo "4) Exit"
     echo ""
     read -p "Enter choice [1-4]: " choice
@@ -86,7 +167,7 @@ in
       ${mplabxFhs}/bin/mplabx-env -c "cd $DOWNLOAD_DIR && ./$XC32_INSTALLER --mode text"
 
       echo ""
-      echo "XC32 installation complete!"
+      echo "XC32 v$XC32_VERSION installation complete!"
     }
 
     install_mplabx() {
@@ -98,9 +179,9 @@ in
       cd "$DOWNLOAD_DIR"
       tar -xf "$MPLABX_TAR" 2>/dev/null || true
 
-      MPLABX_SH=$(ls MPLABX-v*.sh 2>/dev/null | head -1)
+      MPLABX_SH=$(ls MPLABX-v''${MPLABX_VERSION}*.sh 2>/dev/null | head -1)
       if [ -z "$MPLABX_SH" ]; then
-        echo "Error: Could not find MPLAB X installer script"
+        echo "Error: Could not find MPLAB X installer script for v$MPLABX_VERSION"
         exit 1
       fi
 
@@ -115,7 +196,7 @@ in
       sudo ./$MPLABX_SH --nolibrarycheck -- --mode text --installdir /opt/microchip/mplabx/v$MPLABX_VERSION
 
       echo ""
-      echo "MPLAB X installation complete!"
+      echo "MPLAB X v$MPLABX_VERSION installation complete!"
     }
 
     case $choice in
@@ -144,18 +225,18 @@ in
     echo ""
 
     if [ -d "$INSTALL_DIR/xc32" ]; then
-      echo "XC32 installed: $(ls $INSTALL_DIR/xc32/ 2>/dev/null || echo 'none')"
-      echo "  Test with: xc32-gcc --version"
+      echo "XC32 versions installed: $(ls $INSTALL_DIR/xc32/ 2>/dev/null | tr '\n' ' ')"
     fi
 
     if [ -d "$INSTALL_DIR/mplabx" ]; then
-      echo "MPLAB X installed: $(ls $INSTALL_DIR/mplabx/ 2>/dev/null || echo 'none')"
-      echo "  Test with: mplab-ipe -?"
-      echo "  Start IDE: mplab-ide"
+      echo "MPLAB X versions installed: $(ls $INSTALL_DIR/mplabx/ 2>/dev/null | tr '\n' ' ')"
     fi
 
     echo ""
+    echo "To use a specific version, set environment variables:"
+    echo "  export MPLABX_VERSION=v$MPLABX_VERSION"
+    echo "  export XC32_VERSION=v$XC32_VERSION"
+    echo ""
     echo "Make sure your user is in the 'plugdev' group for USB programmer access."
-    echo "If using the NixOS module, this is handled automatically."
     echo ""
   ''

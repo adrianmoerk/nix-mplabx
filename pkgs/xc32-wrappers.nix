@@ -1,19 +1,34 @@
 # Wrapper scripts for XC32 compiler tools
-# These invoke the tools installed in /opt/microchip/xc32/
+# Version can be overridden via XC32_VERSION environment variable
 {
   pkgs,
   xc32Version,
 }: let
-  xc32BasePath = "/opt/microchip/xc32/${xc32Version}";
+  defaultVersion = xc32Version;
 
-  # Common wrapper for XC32 tools
+  # Common wrapper for XC32 tools with auto-detection
   makeXc32Wrapper = name:
     pkgs.writeShellScriptBin name ''
-      XC32_PATH="${xc32BasePath}"
+      INSTALL_DIR="/opt/microchip/xc32"
+
+      # Use environment variable, or find latest installed, or fall back to default
+      if [ -n "$XC32_VERSION" ]; then
+        VERSION="$XC32_VERSION"
+      elif [ -d "$INSTALL_DIR" ]; then
+        # Find latest installed version
+        VERSION=$(ls -1 "$INSTALL_DIR" 2>/dev/null | sort -V | tail -1)
+      fi
+      VERSION="''${VERSION:-${defaultVersion}}"
+
+      XC32_PATH="$INSTALL_DIR/$VERSION"
 
       if [ ! -d "$XC32_PATH" ]; then
-        echo "Error: XC32 not found at $XC32_PATH"
-        echo "Run 'mplab-install' to install the XC32 compiler"
+        echo "Error: XC32 not found at $XC32_PATH" >&2
+        if [ -d "$INSTALL_DIR" ]; then
+          echo "Available versions: $(ls -1 "$INSTALL_DIR" 2>/dev/null | tr '\n' ' ')" >&2
+        fi
+        echo "Run 'mplab-install' to install the XC32 compiler" >&2
+        echo "Or set XC32_VERSION environment variable to select a version" >&2
         exit 1
       fi
 

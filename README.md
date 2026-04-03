@@ -7,6 +7,7 @@ Since MPLAB X and XC32 are proprietary software that cannot be redistributed, th
 - Wrapper scripts for the IDE, IPE, and compiler tools
 - An installation helper that downloads directly from Microchip
 - A NixOS module with udev rules for USB programmers
+- Support for multiple versions installed side-by-side
 
 ## Supported Hardware
 
@@ -40,14 +41,11 @@ Since MPLAB X and XC32 are proprietary software that cannot be redistributed, th
   programs.mplabx = {
     enable = true;
     users = [ "yourusername" ];  # Users with USB programmer access
-    # Optional: override versions
-    # mplabxVersion = "v6.30";
-    # xc32Version = "v5.10";
   };
 
   # Add the tools to your environment
   environment.systemPackages = with inputs.nix-mplabx.packages.${pkgs.system}; [
-    mplab-wrappers   # mplab-ide, mplab-ipe, mplab-ipe-gui
+    mplab-wrappers   # mplab-ide, mplab-ipe, mplab-ipe-gui, mplab-versions
     xc32-wrappers    # xc32-gcc, xc32-g++, etc.
     mplab-install    # Installation helper
   ];
@@ -67,7 +65,7 @@ mplab-install
 
 | Package | Description |
 |---------|-------------|
-| `mplab-wrappers` | Wrapper scripts for `mplab-ide`, `mplab-ipe`, `mplab-ipe-gui` |
+| `mplab-wrappers` | Wrapper scripts for `mplab-ide`, `mplab-ipe`, `mplab-ipe-gui`, `mplab-versions` |
 | `xc32-wrappers` | Wrapper scripts for XC32 compiler tools |
 | `mplab-install` | Interactive installer that downloads from Microchip |
 | `mplabx-fhs` | FHS environment (used internally by wrappers) |
@@ -78,7 +76,7 @@ mplab-install
 After installation:
 
 ```bash
-# Start MPLAB X IDE
+# Start MPLAB X IDE (uses latest installed version)
 mplab-ide
 
 # Start IPE (GUI mode)
@@ -89,11 +87,51 @@ mplab-ipe -?
 
 # XC32 compiler
 xc32-gcc --version
+
+# Show installed versions
+mplab-versions
 ```
 
-## Custom Versions
+## Version Management
 
-To use different versions of MPLAB X or XC32:
+### Installing Specific Versions
+
+```bash
+# Show known working versions
+mplab-install --list-versions
+
+# Install specific versions
+mplab-install --mplabx-version 6.25 --xc32-version 4.35
+
+# Install default versions
+mplab-install
+```
+
+### Using Specific Versions
+
+The wrappers automatically detect the latest installed version. To use a specific version:
+
+```bash
+# Set environment variables
+export MPLABX_VERSION=v6.25
+export XC32_VERSION=v4.35
+
+# Or inline
+MPLABX_VERSION=v6.25 mplab-ide
+XC32_VERSION=v4.35 xc32-gcc --version
+```
+
+### Multiple Versions Side-by-Side
+
+You can install multiple versions. They are stored in:
+- `/opt/microchip/mplabx/v6.30/`
+- `/opt/microchip/mplabx/v6.25/`
+- `/opt/microchip/xc32/v5.10/`
+- `/opt/microchip/xc32/v4.35/`
+
+## Custom Versions in Nix Config
+
+To set default versions in your NixOS configuration:
 
 ```nix
 { inputs, pkgs, ... }:
@@ -111,11 +149,16 @@ in {
 }
 ```
 
-## Installation Directory
+## NixOS Module Options
 
-Tools are installed to `/opt/microchip/`:
-- `/opt/microchip/mplabx/v6.30/` - MPLAB X IDE
-- `/opt/microchip/xc32/v5.10/` - XC32 compiler
+```nix
+programs.mplabx = {
+  enable = true;                    # Enable udev rules
+  users = [ "alice" "bob" ];        # Users with USB programmer access
+  mplabxVersion = "v6.30";          # Default MPLAB X version (for reference)
+  xc32Version = "v5.10";            # Default XC32 version (for reference)
+};
+```
 
 ## Troubleshooting
 
@@ -140,7 +183,7 @@ Tools are installed to `/opt/microchip/`:
 
 ### Java errors in IDE
 
-The wrappers use MPLAB's bundled Java 8. If you see Java errors, ensure the bundled JRE path is correct for your MPLAB X version.
+The wrappers use MPLAB's bundled Java 8. If you see Java errors, ensure the bundled JRE exists in the MPLAB X installation directory.
 
 ### IDE crashes on startup
 
@@ -149,6 +192,15 @@ Try running in FHS environment directly to see errors:
 mplabx-env
 cd /opt/microchip/mplabx/v6.30/mplab_platform/bin
 ./mplab_ide
+```
+
+### Wrong version being used
+
+Check which versions are installed and selected:
+```bash
+mplab-versions
+echo $MPLABX_VERSION
+echo $XC32_VERSION
 ```
 
 ## License
