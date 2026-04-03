@@ -23,7 +23,7 @@ Since MPLAB X and XC32 are proprietary software that cannot be redistributed, th
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nix-mplabx.url = "github:yourusername/nix-mplabx";
+    nix-mplabx.url = "github:adrianmoerk/nix-mplabx";
   };
 }
 ```
