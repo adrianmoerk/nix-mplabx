@@ -31,6 +31,20 @@ in {
   };
 
   config = mkIf cfg.enable {
+    # Create /etc/.mplab_ide/mchpsegusbmonitor symlink that MPLAB's startup script expects.
+    # The Microchip installer normally places this during install, but NixOS manages /etc
+    # so it never gets created, causing a startup error and broken compilation output.
+    system.activationScripts.mplabxUsbMonitor = ''
+      MPLABX_PATH="/opt/microchip/mplabx/${cfg.mplabxVersion}"
+      MONITOR_SRC="$MPLABX_PATH/mplab_platform/lib/mchpsegusbmonitor"
+      MONITOR_DST="/etc/.mplab_ide/mchpsegusbmonitor"
+
+      if [ -f "$MONITOR_SRC" ]; then
+        mkdir -p /etc/.mplab_ide
+        ln -sf "$MONITOR_SRC" "$MONITOR_DST"
+      fi
+    '';
+
     # udev rules for Microchip programmers
     services.udev.extraRules = ''
       # Microchip PICkit 4
