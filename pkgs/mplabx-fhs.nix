@@ -13,6 +13,7 @@ pkgs.buildFHSEnv {
       glibc
       gcc
       binutils
+      gnumake
       zlib
       stdenv.cc.cc.lib
 
