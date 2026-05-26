@@ -14,7 +14,7 @@ pkgs.writeShellScriptBin "mplab-install" ''
 
   # Available versions (update these as Microchip releases new versions)
   MPLABX_VERSIONS=("6.30" "6.25" "6.20" "6.15" "6.10" "6.05" "6.00")
-  XC32_VERSIONS=("5.10" "4.45" "4.40" "4.35" "4.30" "4.21" "4.20")
+  XC32_VERSIONS=("5.10" "5.00" "4.60" "4.50" "4.45" "4.40" "4.35" "4.30" "4.21" "4.20")
 
   # Microchip referrer URL (required for downloads)
   REFERRER="https://www.microchip.com/en-us/tools-resources/develop/mplab-x-ide"
