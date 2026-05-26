@@ -14,6 +14,16 @@ pkgs.buildFHSEnv {
       gcc
       binutils
       gnumake
+      git
+      cacert
+      curl
+      unzip
+      zip
+      gnutar
+      gzip
+      xdg-utils
+      procps
+      which
       zlib
       stdenv.cc.cc.lib
 
@@ -63,6 +73,8 @@ pkgs.buildFHSEnv {
   # Don't set JAVA_HOME - let MPLAB use its bundled Java 8
   profile = ''
     export _JAVA_AWT_WM_NONREPARENTING=1
+    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+    export GIT_SSL_CAINFO=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
   '';
 
   runScript = "bash";
