@@ -31,6 +31,18 @@ in {
   };
 
   config = mkIf cfg.enable {
+    # MPLAB's startup script expects /etc/.mplab_ide/mchpsegusbmonitor to exist.
+    # The Microchip installer normally places it there, but on NixOS this doesn't
+    # persist (the installer runs inside an FHS env and /etc is Nix-managed).
+    # Provide a no-op stub so the startup script doesn't error out.
+    environment.etc.".mplab_ide/mchpsegusbmonitor" = {
+      text = ''
+        #!/bin/sh
+        exit 0
+      '';
+      mode = "0755";
+    };
+
     # udev rules for Microchip programmers
     services.udev.extraRules = ''
       # Microchip PICkit 4

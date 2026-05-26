@@ -121,7 +121,7 @@ Select XC32 version to install:
   3) v4.40
   ...
 
-Select version [1-7]: 1
+Select version [1-10]: 1
 ```
 
 ### Using Specific Versions
