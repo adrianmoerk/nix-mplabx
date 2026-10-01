@@ -63,6 +63,12 @@ pkgs.buildFHSEnv {
       nspr
       nss
 
+      # JxBrowser's bundled Chromium (MCC Melody UI, Start Page, Content Manager)
+      # exits with code 127 without these.
+      expat
+      libxcb
+      libgbm
+
       # 32-bit libraries (some tools need these)
       pkgsi686Linux.glibc
       pkgsi686Linux.gcc

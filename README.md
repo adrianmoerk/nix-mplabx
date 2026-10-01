@@ -219,6 +219,10 @@ cd /opt/microchip/mplabx/v6.30/mplab_platform/bin
 ./mplab_ide
 ```
 
+### MCC button does nothing / stays greyed out
+
+JxBrowser's Chromium (MCC Melody, Start Page, Content Manager) exits with code 127 if `libexpat.so.1`, `libxcb.so.1` or `libgbm.so.1` are missing; `mplabx-fhs` ships `expat`, `libxcb` and `libgbm` for this.
+
 ### Wrong version being used
 
 Check which versions are installed and selected:
