@@ -15,20 +15,28 @@ pkgs.writeShellScriptBin "mplab-install" ''
   # Available versions (update these as Microchip releases new versions)
   MPLABX_VERSIONS=("6.30" "6.25" "6.20" "6.15" "6.10" "6.05" "6.00")
   XC32_VERSIONS=("5.10" "5.00" "4.60" "4.50" "4.45" "4.40" "4.35" "4.30" "4.21" "4.20")
+  XC8_VERSIONS=("3.10" "3.00" "2.50" "2.46" "2.45" "2.41" "2.40")
+  XC16_VERSIONS=("2.10" "2.00")
+  XCDSC_VERSIONS=("3.31" "3.30" "3.21" "3.20" "3.10" "3.00")
 
   # Microchip referrer URL (required for downloads)
   REFERRER="https://www.microchip.com/en-us/tools-resources/develop/mplab-x-ide"
 
-  echo "=== MPLAB X / XC32 Installation Helper ==="
+  echo "=== MPLAB X / XC Compiler Installation Helper ==="
   echo ""
 
-  # Show currently installed versions
-  if [ -d "$INSTALL_DIR/mplabx" ] && [ "$(ls -A $INSTALL_DIR/mplabx 2>/dev/null)" ]; then
-    echo "Installed MPLAB X versions: $(ls $INSTALL_DIR/mplabx/ 2>/dev/null | tr '\n' ' ')"
-  fi
-  if [ -d "$INSTALL_DIR/xc32" ] && [ "$(ls -A $INSTALL_DIR/xc32 2>/dev/null)" ]; then
-    echo "Installed XC32 versions: $(ls $INSTALL_DIR/xc32/ 2>/dev/null | tr '\n' ' ')"
-  fi
+  # Print installed versions of each tool
+  show_installed() {
+    local prefix="$1"
+    local tool
+    for tool in mplabx xc8 xc16 xc-dsc xc32; do
+      if [ -d "$INSTALL_DIR/$tool" ] && [ "$(ls -A $INSTALL_DIR/$tool 2>/dev/null)" ]; then
+        echo "$prefix $tool: $(ls $INSTALL_DIR/$tool/ 2>/dev/null | tr '\n' ' ')"
+      fi
+    done
+  }
+
+  show_installed "Installed"
   echo ""
 
   # Create directories
@@ -84,28 +92,39 @@ pkgs.writeShellScriptBin "mplab-install" ''
     done
   }
 
-  install_xc32() {
-    local version="$1"
+  # Install an XC compiler
+  # Args: <tool dir/file prefix> <display name> <version> <platform suffix>
+  install_compiler() {
+    local tool="$1"
+    local name="$2"
+    local version="$3"
+    local platform="$4"
+    local prefix="$INSTALL_DIR/$tool/v$version"
 
     echo ""
-    echo "=== Installing XC32 Compiler v$version ==="
+    echo "=== Installing $name Compiler v$version ==="
 
-    local installer="xc32-v''${version}-full-install-linux-x64-installer.run"
+    local installer="''${tool}-v''${version}-full-install-''${platform}-installer.run"
     local url="https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/$installer"
 
     download_if_missing "$url" "$installer"
     chmod +x "$DOWNLOAD_DIR/$installer"
 
     echo ""
-    echo "Running XC32 installer in FHS environment..."
-    echo "When prompted, install to: /opt/microchip/xc32/v$version"
+    echo "Running $name installer in FHS environment..."
+    echo "Installing to: $prefix"
     echo ""
 
-    ${mplabxFhs}/bin/mplabx-env -c "cd $DOWNLOAD_DIR && ./$installer --mode text"
+    ${mplabxFhs}/bin/mplabx-env -c "cd $DOWNLOAD_DIR && ./$installer --mode text --prefix $prefix"
 
     echo ""
-    echo "XC32 v$version installation complete!"
+    echo "$name v$version installation complete!"
   }
+
+  install_xc32() { install_compiler xc32 XC32 "$1" linux-x64; }
+  install_xc8() { install_compiler xc8 XC8 "$1" linux-x64; }
+  install_xc16() { install_compiler xc16 XC16 "$1" linux64; }
+  install_xcdsc() { install_compiler xc-dsc XC-DSC "$1" linux64; }
 
   install_mplabx() {
     local version="$1"
@@ -144,12 +163,15 @@ pkgs.writeShellScriptBin "mplab-install" ''
   # Main menu
   echo "What would you like to install?"
   echo ""
-  echo "  1) XC32 Compiler only"
-  echo "  2) MPLAB X IDE/IPE only"
-  echo "  3) Both XC32 and MPLAB X"
-  echo "  4) Exit"
+  echo "  1) XC32 Compiler (PIC32 / SAM)"
+  echo "  2) XC8 Compiler (PIC10/12/16/18 / AVR)"
+  echo "  3) XC16 Compiler (PIC24 / dsPIC)"
+  echo "  4) XC-DSC Compiler (dsPIC DSC)"
+  echo "  5) MPLAB X IDE/IPE"
+  echo "  6) Both XC32 and MPLAB X"
+  echo "  7) Exit"
   echo ""
-  read -p "Enter choice [1-4]: " main_choice
+  read -p "Enter choice [1-7]: " main_choice
 
   case $main_choice in
     1)
@@ -157,16 +179,28 @@ pkgs.writeShellScriptBin "mplab-install" ''
       install_xc32 "$XC32_VERSION"
       ;;
     2)
+      XC8_VERSION=$(select_version "Select XC8 version to install:" "''${XC8_VERSIONS[@]}")
+      install_xc8 "$XC8_VERSION"
+      ;;
+    3)
+      XC16_VERSION=$(select_version "Select XC16 version to install:" "''${XC16_VERSIONS[@]}")
+      install_xc16 "$XC16_VERSION"
+      ;;
+    4)
+      XCDSC_VERSION=$(select_version "Select XC-DSC version to install:" "''${XCDSC_VERSIONS[@]}")
+      install_xcdsc "$XCDSC_VERSION"
+      ;;
+    5)
       MPLABX_VERSION=$(select_version "Select MPLAB X version to install:" "''${MPLABX_VERSIONS[@]}")
       install_mplabx "$MPLABX_VERSION"
       ;;
-    3)
+    6)
       XC32_VERSION=$(select_version "Select XC32 version to install:" "''${XC32_VERSIONS[@]}")
       MPLABX_VERSION=$(select_version "Select MPLAB X version to install:" "''${MPLABX_VERSIONS[@]}")
       install_xc32 "$XC32_VERSION"
       install_mplabx "$MPLABX_VERSION"
       ;;
-    4)
+    7)
       echo "Exiting."
       exit 0
       ;;
@@ -180,18 +214,15 @@ pkgs.writeShellScriptBin "mplab-install" ''
   echo "=== Installation Summary ==="
   echo ""
 
-  if [ -d "$INSTALL_DIR/xc32" ] && [ "$(ls -A $INSTALL_DIR/xc32 2>/dev/null)" ]; then
-    echo "XC32 versions installed: $(ls $INSTALL_DIR/xc32/ 2>/dev/null | tr '\n' ' ')"
-  fi
-
-  if [ -d "$INSTALL_DIR/mplabx" ] && [ "$(ls -A $INSTALL_DIR/mplabx 2>/dev/null)" ]; then
-    echo "MPLAB X versions installed: $(ls $INSTALL_DIR/mplabx/ 2>/dev/null | tr '\n' ' ')"
-  fi
+  show_installed "Installed"
 
   echo ""
   echo "Wrappers will auto-detect the latest installed version."
   echo "To use a specific version, set environment variables:"
   echo "  export MPLABX_VERSION=v6.30"
   echo "  export XC32_VERSION=v5.10"
+  echo ""
+  echo "XC8/XC16/XC-DSC have no command-line wrappers yet. MPLAB X picks them up"
+  echo "from $INSTALL_DIR, or add them under Tools > Options > Embedded > Build Tools."
   echo ""
 ''

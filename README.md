@@ -1,6 +1,6 @@
 # nix-mplabx
 
-NixOS flake for Microchip MPLAB X IDE, IPE, and XC32 compiler.
+NixOS flake for Microchip MPLAB X IDE, IPE, and XC compilers (XC32, XC8, XC16, XC-DSC).
 
 Since MPLAB X and XC32 are proprietary software that cannot be redistributed, this flake provides:
 - An FHS environment with all required dependencies
@@ -103,16 +103,19 @@ mplab-install
 ```
 
 ```
-=== MPLAB X / XC32 Installation Helper ===
+=== MPLAB X / XC Compiler Installation Helper ===
 
 What would you like to install?
 
-  1) XC32 Compiler only
-  2) MPLAB X IDE/IPE only
-  3) Both XC32 and MPLAB X
-  4) Exit
+  1) XC32 Compiler (PIC32 / SAM)
+  2) XC8 Compiler (PIC10/12/16/18 / AVR)
+  3) XC16 Compiler (PIC24 / dsPIC)
+  4) XC-DSC Compiler (dsPIC DSC)
+  5) MPLAB X IDE/IPE
+  6) Both XC32 and MPLAB X
+  7) Exit
 
-Enter choice [1-4]: 3
+Enter choice [1-7]: 6
 
 Select XC32 version to install:
 
@@ -145,6 +148,11 @@ You can install multiple versions. They are stored in:
 - `/opt/microchip/mplabx/v6.25/`
 - `/opt/microchip/xc32/v5.10/`
 - `/opt/microchip/xc32/v4.35/`
+- `/opt/microchip/xc8/v3.10/`
+- `/opt/microchip/xc16/v2.10/`
+- `/opt/microchip/xc-dsc/v3.31/`
+
+XC8, XC16 and XC-DSC don't have command-line wrappers yet. MPLAB X detects them under `/opt/microchip`. If it doesn't, add them via Tools → Options → Embedded → Build Tools.
 
 ## Custom Versions in Nix Config
 
